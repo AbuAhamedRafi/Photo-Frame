@@ -6,4 +6,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-//Photo Frame Routes
+//Photo Frame Routes 
+
+// My Routes
