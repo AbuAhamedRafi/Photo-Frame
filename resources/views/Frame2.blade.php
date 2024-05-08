@@ -12,9 +12,15 @@
 </head>
 
 <body class="bg-gray-100">
+    <nav class="bg-gray-800">
+        <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+            <div class="text-center text-2xl text-white font-bold py-5">
+                <h1>Frame Generator™</h1>
+            </div>
+        </div>
+    </nav>
     <div class="container mx-auto py-8">
-        <h1 class="text-3xl font-semibold text-center mb-8">Photo Frame Generator with Crop</h1>
-        <div class="flex justify-center mb-8">
+        <div class="flex justify-center">
             <div class="w-64">
                 <!-- Dropdown for frame selection -->
                 <p class="text-center"><strong>Choose Your frame Type</strong></p>
@@ -27,13 +33,19 @@
                     <option value="{{ asset('images/Winner.png') }}">Winner</option>
                 </select>
             </div>
+            <div id="frameContainer" class="bg-white w-64 h-64 border border-gray-300 relative overflow-hidden mx-auto">
+                <img id="uploadedImage" class="absolute top-0 left-0 w-full h-full object-cover" src=""
+                    alt="Uploaded Image">
+                <!-- Display selected frame -->
+                <img id="selectedFrameImage" src="" class="absolute top-0 left-0 w-full h-full object-cover"
+                    alt="Selected Frame">
+            </div>
         </div>
-        <div id="frameContainer" class="bg-white w-64 h-64 border border-gray-300 relative overflow-hidden mx-auto">
-            <img id="uploadedImage" class="absolute top-0 left-0 w-full h-full object-cover" src=""
-                alt="Uploaded Image">
-            <!-- Display selected frame -->
-            <img id="selectedFrameImage" src="" class="absolute top-0 left-0 w-full h-full object-cover"
-                alt="Selected Frame">
+        <div class="container mx-auto py-8">
+            <div class="flex justify-center mt-8">
+                <input type="text" id="textInput" class="border border-gray-300 px-2 py-1 rounded"
+                    placeholder="Enter Text">
+            </div>
         </div>
         <div class="flex justify-center mt-8">
             <input type="file" id="uploadInput" accept="image/*" class="hidden">
@@ -48,8 +60,36 @@
         </div>
     </div>
 
+    {{-- footer  --}}
+
+
+    <footer class="bg-white rounded-lg shadow dark:bg-gray-900 m-4">
+        <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
+            <div class="sm:flex sm:items-center sm:justify-between">
+                    <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Frame Generator™</span>
+                <ul
+                    class="flex flex-wrap items-center mb-6 text-sm font-medium text-gray-500 sm:mb-0 dark:text-gray-400">
+                    <li>
+                        <a href="#" class="hover:underline me-4 md:me-6">About</a>
+                    </li>
+                    <li>
+                        <a href="#" class="hover:underline me-4 md:me-6 border-r-2 border-l-2 px-3 mx-3">Licensing</a>
+                    </li>
+                    <li>
+                        <a href="#" class="hover:underline">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
+            <span class="block text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 Frame Generator™ </span>
+        </div>
+    </footer>
+
+
+
     <script>
         let cropper;
+        let text = ''; // Initialize text variable
 
         document.getElementById('uploadInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -83,6 +123,10 @@
             reader.readAsDataURL(file);
         });
 
+        document.getElementById('textInput').addEventListener('input', function(event) {
+            text = event.target.value; // Update the text variable
+        });
+
         document.getElementById('frameSelect').addEventListener('change', function(event) {
             const selectedFrame = event.target.value;
             document.getElementById('selectedFrameImage').src = selectedFrame;
@@ -102,6 +146,13 @@
                     frameImg.src = selectedFrame;
                     frameImg.onload = function() {
                         ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+
+                        // Draw the text on the canvas
+                        ctx.font = '20px Arial'; // Set font size and type
+                        ctx.fillStyle = 'white'; // Set text color
+                        ctx.textAlign = 'center'; // Align text center
+                        ctx.fillText(text, canvas.width / 2, canvas.height / 2); // Draw text in the center
+
                         const dataUrl = canvas.toDataURL('image/png');
 
                         // Trigger download

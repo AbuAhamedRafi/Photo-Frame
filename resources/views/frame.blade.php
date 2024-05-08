@@ -4,14 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Frame Generator</title>
+    <title>Photo Frame Generator with Crop</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 </head>
 
 <body class="bg-gray-100">
     <div class="container mx-auto py-8">
-        <h1 class="text-3xl font-semibold text-center mb-8">Photo Frame Generator</h1>
+        <h1 class="text-3xl font-semibold text-center mb-8">Photo Frame Generator with Crop</h1>
         <div class="flex justify-center mb-8">
             <div class="w-64">
                 <!-- Dropdown for frame selection -->
@@ -41,16 +43,41 @@
             <button id="generateBtn"
                 class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300 ease-in-out mr-4">Generate
                 Image</button>
+            <button id="cropBtn"
+                class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition duration-300 ease-in-out mr-4">Crop</button>
         </div>
     </div>
 
     <script>
+        let cropper;
+
         document.getElementById('uploadInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             const reader = new FileReader();
- 
+
             reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.onload = function() {
+                    // Destroy previous cropper instance if exists
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    // Initialize Cropper
+                    cropper = new Cropper(img, {
+                        aspectRatio: NaN, // Allow free aspect ratio
+                        viewMode: 1, // Restricts the cropping box to always fit within the container
+                        autoCropArea: 1, // Always create a crop box that fills the preview area
+                        crop(event) {
+                            const canvasData = cropper.getCanvasData();
+                            const cropData = cropper.getCropBoxData();
+                            console.log('Canvas Data:', canvasData);
+                            console.log('Crop Box Data:', cropData);
+                        }
+                    });
+                };
                 document.getElementById('uploadedImage').src = e.target.result;
+                document.getElementById('frameContainer').appendChild(img);
             };
 
             reader.readAsDataURL(file);
@@ -60,63 +87,42 @@
             const selectedFrame = event.target.value;
             document.getElementById('selectedFrameImage').src = selectedFrame;
         });
-        let isDragging = false;
-        let offsetX, offsetY;
 
-        document.getElementById('uploadedImage').addEventListener('mousedown', function(event) {
-            isDragging = true;
-            offsetX = event.offsetX;
-            offsetY = event.offsetY;
-        });
-
-        document.addEventListener('mousemove', function(event) {
-            if (isDragging) {
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas();
+                const selectedFrame = document.getElementById('frameSelect').value;
                 const frameContainer = document.getElementById('frameContainer');
-                const uploadedImage = document.getElementById('uploadedImage');
-                const mouseX = event.clientX - frameContainer.offsetLeft;
-                const mouseY = event.clientY - frameContainer.offsetTop;
 
-                uploadedImage.style.left = mouseX - offsetX + 'px';
-                uploadedImage.style.top = mouseY - offsetY + 'px';
+                if (canvas && selectedFrame) {
+                    const ctx = canvas.getContext('2d');
+
+                    // Draw the frame
+                    const frameImg = new Image();
+                    frameImg.src = selectedFrame;
+                    frameImg.onload = function() {
+                        ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+                        const dataUrl = canvas.toDataURL('image/png');
+
+                        // Trigger download
+                        const link = document.createElement('a');
+                        link.href = dataUrl;
+                        link.download = 'generated_image.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    };
+                } else {
+                    alert('Please select a frame.');
+                }
+            } else {
+                alert('Please upload an image and crop it.');
             }
         });
 
-        document.addEventListener('mouseup', function() {
-            isDragging = false;
-        });
-
-
-
-
-        document.getElementById('generateBtn').addEventListener('click', function() {
-            const uploadedImage = document.getElementById('uploadedImage');
-            const selectedFrame = document.getElementById('frameSelect').value;
-            const frameContainer = document.getElementById('frameContainer');
-
-            if (uploadedImage.src && selectedFrame) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
-                canvas.width = frameContainer.offsetWidth;
-                canvas.height = frameContainer.offsetHeight;
-
-                ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
-
-                const frameImg = new Image();
-                frameImg.src = selectedFrame;
-                frameImg.onload = function() {
-                    ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
-
-                    const dataUrl = canvas.toDataURL('image/png');
-                    const link = document.createElement('a');
-                    link.href = dataUrl;
-                    link.download = 'generated_image.png';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                };
-            } else {
-                alert('Please upload an image and select a frame.');
+        document.getElementById('cropBtn').addEventListener('click', function() {
+            if (cropper) {
+                cropper.crop();
             }
         });
     </script>
