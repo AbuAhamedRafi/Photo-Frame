@@ -1,0 +1,14 @@
+/* Ensure cropper is above images but below selected frame */
+.cropper-container {
+    z-index: 1 !important;
+}
+
+/* Ensure selected frame stays on top */
+#selectedFrameImage {
+    z-index: 10;
+}
+
+/* Ensure uploaded image stays on top */
+#uploadedImage {
+    z-index: 10;
+}
