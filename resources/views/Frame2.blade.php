@@ -9,6 +9,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body class="bg-gray-100">
@@ -36,25 +37,19 @@
                 </div>
             </div>
             <div id="frameContainer"
-                class="bg-white w-64 h-64 border border-gray-300 relative overflow-hidden mx-auto mt-4">
-                <img id="uploadedImage" class="absolute top-0 left-0 w-full h-full object-cover" src=""
-                    alt="Uploaded Image">
+                class="bg-white w-64 h-64 lg:w-96 lg:h-96 border border-gray-300 relative overflow-hidden mx-auto mt-4">
+                <img id="uploadedImage" class="absolute top-0 left-0 w-full h-full object-cover" src="">
                 <!-- Display selected frame -->
-                <img id="selectedFrameImage" src="" class="absolute top-0 left-0 w-full h-full object-cover"
-                    alt="Selected Frame">
-                <div id="textOverlay"
-                    class="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none">
-                    <span id="textOnFrame" class="text-lg font-bold text-white"></span>
-                </div>
+                <img id="selectedFrameImage" src="" class="absolute  top-0 left-0 w-full h-full ">
             </div>
+        </div>
+        <div class="container mx-auto py-5 w-1/4">
+            <div class="flex justify-center">
+                <input type="text" id="textInput" placeholder="Type here..."
+                    class="w-full bg-white border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
 
-        </div>
-        <div class="container mx-auto py-8">
-            <div class="flex justify-center mt-8">
-                <input type="text" id="textInput" class="border border-gray-300 px-2 py-1 rounded"
-                    placeholder="Enter Text">
-            </div>
-        </div>
         <div class="flex justify-center mt-8">
             <input type="file" id="uploadInput" accept="image/*" class="hidden">
             <label for="uploadInput"
@@ -65,8 +60,9 @@
                 Image</button>
         </div>
     </div>
-    
+
     {{-- footer  --}}
+
 
     <footer class="bg-white rounded-lg shadow dark:bg-gray-900 m-4">
         <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
@@ -91,109 +87,94 @@
             <span class="block text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 Frame Generator™ </span>
         </div>
     </footer>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-    let cropper;
-    let text = ''; // Initialize text variable
+        let cropper;
+        let text = ''; // Initialize text variable
 
-    // Function to initialize Cropper
-    function initializeCropper(imageElement) {
-        // Destroy previous cropper instance if exists
-        if (cropper) {
-            cropper.destroy();
-        }
-        // Initialize Cropper
-        cropper = new Cropper(imageElement, {
-            aspectRatio: NaN, // Allow free aspect ratio
-            viewMode: 1, // Restricts the cropping box to always fit within the container
-            autoCropArea: 1, // Always create a crop box that fills the preview area
-            crop(event) {
-                const canvasData = cropper.getCanvasData();
-                const cropData = cropper.getCropBoxData();
-                console.log('Canvas Data:', canvasData);
-                console.log('Crop Box Data:', cropData);
+        document.getElementById('uploadInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.match('image.*')) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        // Destroy previous cropper instance if exists
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        // Initialize Cropper
+                        cropper = new Cropper(img, {
+                            aspectRatio: NaN, // Allow free aspect ratio
+                            viewMode: 1, // Restricts the cropping box to always fit within the container
+                            autoCropArea: 1, // Always create a crop box that fills the preview area
+                            crop(event) {
+                                const canvasData = cropper.getCanvasData();
+                                const cropData = cropper.getCropBoxData();
+                                console.log('Canvas Data:', canvasData);
+                                console.log('Crop Box Data:', cropData);
+                            }
+                        });
+                    };
+                    document.getElementById('uploadedImage').src = e.target.result;
+                    document.getElementById('frameContainer').appendChild(img);
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                console.error('Invalid file type or no file selected.');
             }
         });
-    }
 
-    // Event listener for file input change
-    document.getElementById('uploadInput').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        const reader = new FileReader();
+        document.getElementById('textInput').addEventListener('input', function(event) {
+            text = event.target.value; // Update the text variable
+        });
 
-        reader.onload = function(e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.onload = function() {
-                // Initialize Cropper
-                initializeCropper(img);
-                // Display uploaded image
-                document.getElementById('uploadedImage').src = e.target.result;
-            };
-            // Append uploaded image to frame container
-            document.getElementById('frameContainer').appendChild(img);
-        };
+        document.getElementById('frameSelect').addEventListener('change', function(event) {
+            const selectedFrame = event.target.value;
+            document.getElementById('selectedFrameImage').src = selectedFrame;
+        });
 
-        reader.readAsDataURL(file);
-    });
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas();
+                const selectedFrame = document.getElementById('frameSelect').value;
+                const frameContainer = document.getElementById('frameContainer');
 
-    // Event listener for text input change
-    document.getElementById('textInput').addEventListener('input', function(event) {
-        text = event.target.value; // Update text variable
-        updateTextOnFrame(text); // Update text on frame
-    });
+                if (canvas && selectedFrame) {
+                    const ctx = canvas.getContext('2d');
 
-    // Function to update text on frame
-    function updateTextOnFrame(text) {
-        document.getElementById('textOnFrame').textContent = text;
-    }
+                    // Draw the frame
+                    const frameImg = new Image();
+                    frameImg.src = selectedFrame;
+                    frameImg.onload = function() {
+                        ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
 
-    // Event listener for frame selection change
-    document.getElementById('frameSelect').addEventListener('change', function(event) {
-        const selectedFrame = event.target.value;
-        document.getElementById('selectedFrameImage').src = selectedFrame;
-    });
+                        // Draw the text on the canvas
+                        ctx.font = '20px Arial'; // Set font size and type
+                        ctx.fillStyle = 'black'; // Set text color
+                        ctx.textAlign = 'left'; // Align text to the left
+                        ctx.textBaseline = 'bottom'; // Align text to the bottom
+                        ctx.fillText(text, 0, canvas.height); // Draw text at the bottom left corner
 
-    // Event listener for generate image button click
-    document.getElementById('generateBtn').addEventListener('click', function() {
-        if (cropper) {
-            const canvas = cropper.getCroppedCanvas();
-            const selectedFrame = document.getElementById('frameSelect').value;
+                        const dataUrl = canvas.toDataURL('image/png');
 
-            if (canvas && selectedFrame) {
-                const ctx = canvas.getContext('2d');
-
-                // Draw the frame
-                const frameImg = new Image();
-                frameImg.src = selectedFrame;
-                frameImg.onload = function() {
-                    ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
-
-                    // Draw the text on the canvas
-                    ctx.font = '20px Arial'; // Set font size and type
-                    ctx.fillStyle = 'white'; // Set text color
-                    ctx.textAlign = 'center'; // Align text center
-                    ctx.fillText(text, canvas.width / 2, canvas.height / 2); // Draw text in the center
-
-                    // Trigger download
-                    const dataUrl = canvas.toDataURL('image/png');
-                    const link = document.createElement('a');
-                    link.href = dataUrl;
-                    link.download = 'generated_image.png';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                };
+                        // Trigger download
+                        const link = document.createElement('a');
+                        link.href = dataUrl;
+                        link.download = 'generated_image.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    };
+                } else {
+                    alert('Please select a frame.');
+                }
             } else {
-                alert('Please select a frame.');
+                alert('Please upload an image and crop it.');
             }
-        } else {
-            alert('Please upload an image and crop it.');
-        }
-    });
-});
-
+        });
     </script>
 </body>
 
